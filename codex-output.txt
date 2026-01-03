@@ -1,0 +1,124 @@
+```js
+// server.js
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const app = express();
+app.use(express.json());
+const db = new sqlite3.Database('crm.db');
+
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS contacts(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT, email TEXT, phone TEXT
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS notes(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contact_id INTEGER,
+    content TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(contact_id) REFERENCES contacts(id)
+  )`);
+});
+
+app.get('/contacts', (req, res) => {
+  db.all('SELECT * FROM contacts ORDER BY id DESC', [], (err, rows) => res.json(rows));
+});
+
+app.post('/contacts', (req, res) => {
+  const {name, email, phone} = req.body;
+  db.run('INSERT INTO contacts(name,email,phone) VALUES(?,?,?)',[name,email,phone],function(err){
+    res.json({id:this.lastID,name,email,phone});
+  });
+});
+
+app.delete('/contacts/:id', (req,res)=>{
+  db.run('DELETE FROM contacts WHERE id=?', [req.params.id], () => res.sendStatus(204));
+});
+
+app.get('/contacts/:id/notes',(req,res)=>{
+  db.all('SELECT * FROM notes WHERE contact_id=? ORDER BY created_at DESC',[req.params.id],(err,rows)=>res.json(rows));
+});
+
+app.post('/contacts/:id/notes',(req,res)=>{
+  db.run('INSERT INTO notes(contact_id,content) VALUES(?,?)',[req.params.id, req.body.content],function(err){
+    db.get('SELECT * FROM notes WHERE id=?',[this.lastID],(e,row)=>res.json(row));
+  });
+});
+
+app.listen(3000, () => console.log('CRM API on http://localhost:3000'));
+```
+
+```html
+<!-- index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8"><title>Light CRM</title>
+  <style>
+    body{font-family:sans-serif;display:flex;gap:20px;padding:20px;}
+    #contacts{width:200px;border-right:1px solid #ccc;padding-right:10px;}
+    form{margin-bottom:10px;}
+    ul{list-style:none;padding:0;} li{padding:5px;cursor:pointer;}
+    li.active{background:#eef;}
+  </style>
+</head>
+<body>
+  <section id="contacts">
+    <h3>Contacts</h3>
+    <form id="contactForm">
+      <input name="name" placeholder="Name" required><br>
+      <input name="email" placeholder="Email"><br>
+      <input name="phone" placeholder="Phone"><br>
+      <button>Add</button>
+    </form>
+    <ul id="contactList"></ul>
+  </section>
+  <section id="details">
+    <h3 id="contactTitle">Select a contact</h3>
+    <div id="notesSection" style="display:none">
+      <form id="noteForm">
+        <textarea name="content" placeholder="New note" required></textarea><br>
+        <button>Add Note</button>
+      </form>
+      <ul id="noteList"></ul>
+    </div>
+  </section>
+<script>
+const api = 'http://localhost:3000';
+let currentId = null;
+const contactList = document.getElementById('contactList');
+const noteList = document.getElementById('noteList');
+const contactTitle = document.getElementById('contactTitle');
+function fetchContacts(){
+  fetch(api+'/contacts').then(r=>r.json()).then(data=>{
+    contactList.innerHTML='';
+    data.forEach(c=>{
+      const li=document.createElement('li'); li.textContent=c.name+' ('+c.email+')'; li.dataset.id=c.id;
+      li.onclick=()=>selectContact(c); contactList.appendChild(li);
+    });
+  });
+}
+function selectContact(c){
+  currentId=c.id; contactTitle.textContent=c.name; document.querySelectorAll('#contactList li').forEach(li=>li.classList.toggle('active', li.dataset.id==c.id));
+  document.getElementById('notesSection').style.display='block';
+  fetch(`${api}/contacts/${c.id}/notes`).then(r=>r.json()).then(notes=>{
+    noteList.innerHTML=''; notes.forEach(n=>{const li=document.createElement('li'); li.textContent=n.content+' • '+n.created_at; noteList.appendChild(li);});
+  });
+}
+document.getElementById('contactForm').onsubmit=e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  fetch(api+'/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(fd))})
+    .then(()=>{e.target.reset(); fetchContacts();});
+};
+document.getElementById('noteForm').onsubmit=e=>{
+  e.preventDefault(); if(!currentId) return;
+  const fd=new FormData(e.target);
+  fetch(`${api}/contacts/${currentId}/notes`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:fd.get('content')})})
+    .then(()=>{e.target.reset(); selectContact({id:currentId,name:contactTitle.textContent});});
+};
+fetchContacts();
+</script>
+</body>
+</html>
+```
