@@ -1,0 +1,126 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f7f7f7;
+}
+
+header {
+  background: #2c3e50;
+  color: #fff;
+  padding: 1rem;
+}
+
+main {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+section {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#contacts-section {
+  flex: 1;
+}
+
+#details-section {
+  flex: 2;
+}
+
+form div {
+  margin-bottom: 0.5rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-weight: bold;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background: #3498db;
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+#contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+#contact-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+#contact-list li:hover {
+  background: #f0f0f0;
+}
+
+.contact-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.contact-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  background: #95a5a6;
+}
+
+.contact-actions button.delete {
+  background: #e74c3c;
+}
+
+#contact-details h3 {
+  margin-top: 0;
+}
+
+#notes-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+#notes-list li {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.note-meta {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.hidden {
+  display: none;
+}

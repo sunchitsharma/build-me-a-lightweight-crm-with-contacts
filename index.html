@@ -1,38 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Smiley Logo</title>
-<style>
-  body {
-    margin: 0;
-    font-family: sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: #f0f2f5;
-  }
-  .logo {
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    background: #ffdf00;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-  }
-  .logo span {
-    font-size: 90px;
-    line-height: 1;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lightweight CRM</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="logo" aria-label="Smiley logo">
-    <span role="img" aria-label="Smiley">😊</span>
+  <div id="app">
+    <header>
+      <h1>Lightweight CRM</h1>
+    </header>
+    <main>
+      <section id="contacts-section">
+        <h2>Contacts</h2>
+        <form id="contact-form">
+          <input type="hidden" id="contact-id" />
+          <div>
+            <label>Name</label>
+            <input type="text" id="contact-name" required />
+          </div>
+          <div>
+            <label>Email</label>
+            <input type="email" id="contact-email" required />
+          </div>
+          <div>
+            <label>Phone</label>
+            <input type="text" id="contact-phone" />
+          </div>
+          <button type="submit">Save Contact</button>
+          <button type="button" id="reset-contact">Clear</button>
+        </form>
+        <ul id="contact-list"></ul>
+      </section>
+      <section id="details-section">
+        <h2>Contact Details</h2>
+        <div id="contact-details">
+          <p>Select a contact to see details.</p>
+        </div>
+        <div id="notes-section" class="hidden">
+          <h3>Notes</h3>
+          <form id="note-form">
+            <textarea id="note-text" rows="3" required></textarea>
+            <button type="submit">Add Note</button>
+          </form>
+          <ul id="notes-list"></ul>
+        </div>
+      </section>
+    </main>
   </div>
+  <script src="main.js"></script>
 </body>
 </html>
