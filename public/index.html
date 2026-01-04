@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lightweight CRM</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
+    .sidebar { width: 30%; border-right: 1px solid #ccc; padding: 16px; box-sizing: border-box; }
+    .main { flex: 1; padding: 16px; box-sizing: border-box; }
+    h2 { margin-top: 0; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; }
+    li.selected { background: #f0f8ff; }
+    label { display: block; margin-top: 8px; }
+    input, textarea { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
+    button { margin-top: 8px; padding: 8px 12px; }
+    .note { border: 1px solid #ddd; padding: 8px; margin-top: 8px; border-radius: 4px; }
+    .note small { color: #666; display: block; }
+    .actions { margin-top: 8px; display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Contacts</h2>
+    <div>
+      <label>Name<input id="name" /></label>
+      <label>Email<input id="email" /></label>
+      <label>Phone<input id="phone" /></label>
+      <button id="addContact">Add Contact</button>
+    </div>
+    <ul id="contactList"></ul>
+  </div>
+  <div class="main">
+    <h2 id="contactTitle">Select a contact</h2>
+    <div id="contactDetails"></div>
+    <div id="notesSection" style="display:none;">
+      <h3>Notes</h3>
+      <div>
+        <textarea id="noteText" rows="3" placeholder="Add a note..."></textarea>
+        <button id="addNote">Add Note</button>
+      </div>
+      <div id="notesList"></div>
+    </div>
+  </div>
+  <script>
+    const contactListEl = document.getElementById('contactList');
+    const contactTitleEl = document.getElementById('contactTitle');
+    const contactDetailsEl = document.getElementById('contactDetails');
+    const notesSectionEl = document.getElementById('notesSection');
+    const notesListEl = document.getElementById('notesList');
+    const addContactBtn = document.getElementById('addContact');
+    const addNoteBtn = document.getElementById('addNote');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone');
+    const noteTextInput = document.getElementById('noteText');
+
+    let contacts = [];
+    let selectedId = null;
+
+    async function fetchContacts() {
+      const res = await fetch('/api/contacts');
+      contacts = await res.json();
+      renderContacts();
+      if (selectedId) {
+        const exists = contacts.find(c => c.id === selectedId);
+        if (!exists) selectedId = null;
+      }
+      renderSelected();
+    }
+
+    function renderContacts() {
+      contactListEl.innerHTML = '';
+      contacts.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = `${c.name} (${c.email || 'no email'})`;
+        li.className = c.id === selectedId ? 'selected' : '';
+        li.onclick = () => { selectedId = c.id; renderContacts(); renderSelected(); };
+        contactListEl.appendChild(li);
+      });
+    }
+
+    function renderSelected() {
+      if (!selectedId) {
+        contactTitleEl.textContent = 'Select a contact';
+        contactDetailsEl.innerHTML = '';
+        notesSectionEl.style.display = 'none';
+        return;
+      }
+      const contact = contacts.find(c => c.id === selectedId);
+      if (!contact) return;
+      contactTitleEl.textContent = contact.name;
+      contactDetailsEl.innerHTML = `
+        <div>Email: ${contact.email || '-'}<br>Phone: ${contact.phone || '-'}</div>
+        <div class="actions">
+          <button onclick="deleteContact(${contact.id})">Delete Contact</button>
+        </div>
+      `;
+      notesSectionEl.style.display = 'block';
+      renderNotes(contact.notes || []);
+    }
+
+    function renderNotes(notes) {
+      notesListEl.innerHTML = '';
+      notes.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'note';
+        div.innerHTML = `<small>${new Date(n.createdAt).toLocaleString()}</small><div>${n.text}</div><button onclick="deleteNote(${n.id})">Delete</button>`;
+        notesListEl.appendChild(div);
+      });
+    }
+
+    addContactBtn.onclick = async () => {
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const phone = phoneInput.value.trim();
+      if (!name) return alert('Name required');
+      await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone })
+      });
+      nameInput.value = '';
+      emailInput.value = '';
+      phoneInput.value = '';
+      await fetchContacts();
+    };
+
+    addNoteBtn.onclick = async () => {
+      if (!selectedId) return;
+      const text = noteTextInput.value.trim();
+      if (!text) return alert('Note text required');
+      await fetch(`/api/contacts/${selectedId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      noteTextInput.value = '';
+      await fetchContacts();
+    };
+
+    window.deleteContact = async (id) => {
+      await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+      if (selectedId === id) selectedId = null;
+      await fetchContacts();
+    };
+
+    window.deleteNote = async (id) => {
+      await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+      await fetchContacts();
+    };
+
+    fetchContacts();
+  </script>
+</body>
+</html>
